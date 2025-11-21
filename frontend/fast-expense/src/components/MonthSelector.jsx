@@ -33,7 +33,7 @@ function MonthSelector({ onSelect }) {
   if (loading) return <CustomLoader size="sm" />;
 
   return (
-    <div className="relative max-w-md mx-auto p-6 rounded-3xl shadow-2xl overflow-hidden bg-gradient-to-br from-purple-500 to-pink-500 mb-8">
+    <div className="relative max-w-md mx-auto p-6 rounded-3xl shadow-2xl overflow-hidden bg-gradient-to-br from-cyan-500 to-cyan-400 dark:from-cyan-600 dark:to-cyan-700 mb-8 transition-colors duration-300">
       {/* Overlay de brillo */}
       <div className="absolute inset-0 opacity-20 bg-white mix-blend-screen pointer-events-none"></div>
 
@@ -45,13 +45,13 @@ function MonthSelector({ onSelect }) {
         </div>
         <select
           onChange={e => onSelect(e.target.value)}
-          className="w-full bg-transparent text-white placeholder-white/75 px-4 py-3 rounded-full border-2 border-white/50 focus:border-white focus:outline-none transition"
+          className="w-full bg-transparent text-white placeholder-white/75 px-4 py-3 rounded-full border-2 border-white/50 focus:border-white focus:outline-none transition [&>option]:text-gray-800 dark:[&>option]:text-gray-200 dark:[&>option]:bg-gray-800"
         >
-          <option value="" className="text-gray-800">
+          <option value="" className="text-gray-800 dark:text-gray-200 dark:bg-gray-800">
             -- Elige un mes --
           </option>
           {months.map(m => (
-            <option key={m} value={m} className="bg-white text-gray-800">
+            <option key={m} value={m} className="bg-white text-gray-800 dark:bg-gray-800 dark:text-gray-200">
               {m}
             </option>
           ))}

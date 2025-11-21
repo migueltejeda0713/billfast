@@ -74,7 +74,7 @@ export default function BudgetSetter({ onSet }) {
   const hasBudget = budget != null && budget > 0;
 
   return (
-    <div className="relative max-w-md mx-auto p-6 rounded-3xl shadow-2xl overflow-hidden bg-gradient-to-br from-purple-500 to-pink-500 mb-8">
+    <div className="relative max-w-md mx-auto p-6 rounded-3xl shadow-2xl overflow-hidden bg-gradient-to-br from-cyan-500 to-cyan-400 mb-8">
       {/* Overlay de brillo */}
       <div className="absolute inset-0 opacity-20 bg-white mix-blend-screen pointer-events-none"></div>
 
@@ -117,7 +117,7 @@ export default function BudgetSetter({ onSet }) {
               disabled={!input || isNaN(input) || Number(input) <= 0}
               className={`p-2 rounded-full transition ${
                 input && Number(input) > 0
-                  ? 'bg-white text-purple-600 hover:scale-105'
+                  ? 'bg-white text-blue-600 hover:scale-105'
                   : 'bg-white/30 cursor-not-allowed'
               }`}
               title="Fijar presupuesto"

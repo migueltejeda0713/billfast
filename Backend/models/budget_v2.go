@@ -2,11 +2,11 @@ package models
 
 import "time"
 
-type Expense struct {
+type Budget struct {
 	ID        int       `json:"id"`
 	UserID    int       `json:"user_id"`
-	BudgetID  *int      `json:"budget_id,omitempty"` // Nullable para compatibilidad
+	Name      string    `json:"name"`
 	Amount    float64   `json:"amount"`
-	Concept   string    `json:"concept"`
+	IsActive  bool      `json:"is_active"`
 	CreatedAt time.Time `json:"created_at"`
 }

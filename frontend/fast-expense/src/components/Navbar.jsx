@@ -1,103 +1,30 @@
 // src/components/Navbar.jsx
 
-import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { FaBars, FaTimes } from 'react-icons/fa';
-import logo from '../components/images/logo.png'; // Asegúrate de que esta ruta es correcta
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { FaMoon, FaSun } from 'react-icons/fa';
+import { useTheme } from '../context/ThemeContext';
 
 export default function Navbar() {
-  const { pathname } = useLocation();
-  const [open, setOpen] = useState(false);
-
-  const links = [
-    { to: '/dashboard', label: 'Actual' },
-    { to: '/past-month', label: 'Anteriores' },
-  ];
+  const { darkMode, toggleTheme } = useTheme();
 
   return (
-    <nav className="relative bg-gradient-to-br from-purple-500 to-pink-500">
-      {/* Overlay de brillo */}
-      <div className="absolute inset-0 opacity-20 bg-white mix-blend-screen pointer-events-none"></div>
-
-      <div className="relative max-w-4xl mx-auto flex items-center justify-between h-16 px-4">
-        {/* Logo actualizado */}
-        <Link to="/dashboard" className="flex items-center space-x-3">
-          <img
-            src={logo}
-            alt="BillFast Logo"
-            className="h-12 w-auto drop-shadow-md"
-          />
-
+    <nav className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-40 transition-colors duration-300">
+      <div className="max-w-md mx-auto px-4 py-3 relative flex items-center justify-center">
+        <Link to="/dashboard" className="flex items-center justify-center">
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent">
+            BillFast
+          </h1>
         </Link>
 
-        {/* Menu desktop */}
-        <ul className="hidden md:flex space-x-8">
-          {links.map(link => (
-            <li key={link.to}>
-              <Link
-                to={link.to}
-                className={`relative text-white font-medium hover:opacity-90 transition ${pathname === link.to ? 'font-semibold' : 'opacity-80'
-                  }`}
-              >
-                {link.label}
-                {pathname === link.to && (
-                  <span className="absolute -bottom-1 left-0 w-full h-1 bg-white rounded-full"></span>
-                )}
-              </Link>
-            </li>
-          ))}
-          <li>
-            <button
-              onClick={() => {
-                localStorage.clear();
-                window.location.href = '/login';
-              }}
-              className="text-white opacity-80 hover:opacity-90 transition font-medium"
-            >
-              Cerrar Sesión
-            </button>
-          </li>
-        </ul>
-
-        {/* Hamburger mobile */}
         <button
-          className="md:hidden text-white text-xl"
-          onClick={() => setOpen(o => !o)}
+          onClick={toggleTheme}
+          className="absolute right-4 p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+          aria-label="Toggle dark mode"
         >
-          {open ? <FaTimes /> : <FaBars />}
+          {darkMode ? <FaSun className="text-xl text-yellow-500" /> : <FaMoon className="text-xl text-blue-600" />}
         </button>
       </div>
-
-      {/* Menu mobile */}
-      {open && (
-        <div className="md:hidden bg-white bg-opacity-10 backdrop-blur-sm">
-          <ul className="flex flex-col space-y-2 p-4">
-            {links.map(link => (
-              <li key={link.to}>
-                <Link
-                  to={link.to}
-                  onClick={() => setOpen(false)}
-                  className={`block text-white font-medium py-2 px-3 rounded-lg hover:bg-white/20 transition ${pathname === link.to ? 'bg-white/30' : 'opacity-80'
-                    }`}
-                >
-                  {link.label}
-                </Link>
-              </li>
-            ))}
-            <li>
-              <button
-                onClick={() => {
-                  localStorage.clear();
-                  window.location.href = '/login';
-                }}
-                className="block w-full text-white font-medium py-2 px-3 rounded-lg hover:bg-white/20 transition"
-              >
-                Cerrar Sesión
-              </button>
-            </li>
-          </ul>
-        </div>
-      )}
     </nav>
   );
 }

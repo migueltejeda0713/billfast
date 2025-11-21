@@ -19,7 +19,7 @@ export default function ExpenseForm({ onAdd }) {
   return (
     <form
       onSubmit={handleSubmit}
-      className="relative bg-gradient-to-br from-purple-500 to-pink-500 p-8 rounded-3xl shadow-2xl overflow-hidden"
+      className="relative bg-gradient-to-br from-cyan-500 to-cyan-400 p-8 rounded-3xl shadow-2xl overflow-hidden"
     >
       {/* Overlay de brillo */}
       <div className="absolute inset-0 opacity-20 bg-white mix-blend-screen"></div>
@@ -49,7 +49,7 @@ export default function ExpenseForm({ onAdd }) {
 
         <button
           type="submit"
-          className="mt-4 self-end bg-white text-purple-600 font-bold py-3 px-6 rounded-full shadow-lg transform hover:scale-105 hover:shadow-2xl transition"
+          className="mt-4 self-end bg-white text-blue-600 font-bold py-3 px-6 rounded-full shadow-lg transform hover:scale-105 hover:shadow-2xl transition"
         >
           Agregar Gasto
         </button>

@@ -2,20 +2,20 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
 import Navbar from '../components/Navbar';
+import Footer from '../components/Footer';
 import MonthSelector from '../components/MonthSelector';
 import CustomLoader from '../components/CustomLoader';
 import { API_URL } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 
-const CircleProgress = React.lazy(() => import('../components/CircleProgress'));
-const ExpenseList   = React.lazy(() => import('../components/ExpenseList'));
+const ExpenseList = React.lazy(() => import('../components/ExpenseList'));
 
 export default function PastMonth() {
   const { token } = useAuth();
   const [selected, setSelected] = useState('');
-  const [data, setData]         = useState({ total: 0, expenses: [] });
-  const [loading, setLoading]   = useState(false);
-  const [error, setError]       = useState('');
+  const [data, setData] = useState({ total: 0, expenses: [] });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     if (!token || !selected) return;
@@ -33,55 +33,89 @@ export default function PastMonth() {
       .finally(() => setLoading(false));
   }, [token, selected]);
 
-  return (
-    <div className="min-h-screen bg-gradient-to-b from-purple-600 to-pink-500">
-      <Navbar />
-      <div className="p-6 max-w-2xl mx-auto text-white space-y-6">
-        <h2 className="text-3xl font-extrabold drop-shadow-lg">
-          Meses Anteriores
-        </h2>
+  const totalSpent = data.expenses.reduce((s, e) => s + e.amount, 0);
 
-        {/* Selector de mes */}
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20 transition-colors duration-300">
+      <Navbar />
+
+      <main className="px-4 py-4 max-w-md mx-auto space-y-4">
+        <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Historial</h1>
+
+        {/* Month Selector */}
         <MonthSelector onSelect={setSelected} />
 
-        {/* Mensajes */}
+        {/* Loading */}
         {loading && (
           <div className="flex justify-center py-10">
             <CustomLoader size="lg" />
           </div>
         )}
+
+        {/* Error */}
         {error && (
-          <div className="p-4 bg-red-400 bg-opacity-20 text-red-100 rounded-lg">
+          <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded-xl text-sm">
             {error}
           </div>
         )}
 
-        {/* Contenido del mes seleccionado */}
+        {/* Content */}
         {!loading && selected && (
           <Suspense fallback={<CustomLoader size="sm" />}>
-            {/* Progreso circular */}
-            <div className="relative p-6 rounded-3xl shadow-2xl overflow-hidden bg-gradient-to-br from-purple-500 to-pink-500">
-              <div className="absolute inset-0 opacity-20 bg-white mix-blend-screen pointer-events-none"></div>
-              <div className="relative flex flex-col items-center">
-                <h3 className="text-xl font-semibold mb-4">Progreso de {selected}</h3>
-                <CircleProgress
-                  total={data.total}
-                  spent={data.expenses.reduce((s, e) => s + e.amount, 0)}
-                />
-              </div>
+            {/* Summary Card */}
+            <div className="bg-gradient-to-br from-blue-600 to-cyan-400 dark:from-blue-700 dark:to-cyan-600 rounded-2xl shadow-lg p-6 text-white">
+              <p className="text-blue-100 text-sm font-medium mb-2">
+                Total gastado en {selected}
+              </p>
+              <p className="text-4xl font-bold">${totalSpent.toFixed(2)}</p>
+              <p className="text-blue-100 text-sm mt-2">
+                {data.expenses.length} {data.expenses.length === 1 ? 'gasto' : 'gastos'}
+              </p>
             </div>
 
-            {/* Lista de gastos */}
-            <div className="relative p-6 rounded-3xl shadow-2xl overflow-hidden bg-gradient-to-br from-purple-500 to-pink-500">
-              <div className="absolute inset-0 opacity-20 bg-white mix-blend-screen pointer-events-none"></div>
-              <div className="relative">
-                <h3 className="text-xl font-semibold mb-4">Gastos de {selected}</h3>
-                <ExpenseList expenses={data.expenses} />
-              </div>
+            {/* Expenses List */}
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-5 transition-colors duration-300">
+              <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-4">
+                Gastos de {selected}
+              </h3>
+
+              {data.expenses.length === 0 ? (
+                <p className="text-gray-400 dark:text-gray-500 text-center py-8 text-sm">
+                  No hay gastos en este mes
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {data.expenses.map((expense, idx) => (
+                    <div
+                      key={expense.id || idx}
+                      className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                    >
+                      <div className="flex-1">
+                        <p className="font-semibold text-gray-800 dark:text-gray-200">{expense.concept}</p>
+                        {expense.created_at && (
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            {new Date(expense.created_at).toLocaleDateString('es-ES', {
+                              day: 'numeric',
+                              month: 'short',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </p>
+                        )}
+                      </div>
+                      <div className="text-right">
+                        <p className="font-bold text-blue-600 dark:text-blue-400">${expense.amount.toFixed(2)}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </Suspense>
         )}
-      </div>
+      </main>
+
+      <Footer />
     </div>
   );
 }

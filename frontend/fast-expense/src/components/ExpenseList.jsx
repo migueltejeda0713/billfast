@@ -5,7 +5,7 @@ function ExpenseList({ expenses }) {
   const list = Array.isArray(expenses) ? expenses : [];
 
   return (
-    <div className="relative max-w-md mx-auto p-6 rounded-3xl shadow-2xl overflow-hidden bg-gradient-to-br from-purple-500 to-pink-500 mb-8">
+    <div className="relative max-w-md mx-auto p-6 rounded-3xl shadow-2xl overflow-hidden bg-gradient-to-br from-cyan-500 to-cyan-400 mb-8">
       {/* Overlay de brillo */}
       <div className="absolute inset-0 opacity-20 bg-white mix-blend-screen pointer-events-none"></div>
 

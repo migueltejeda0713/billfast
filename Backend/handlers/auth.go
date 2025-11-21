@@ -1,124 +1,185 @@
-// handlers/auth.go
 package handlers
 
 import (
-    "database/sql"
-    "encoding/json"
-    "errors"
-    "fmt"
-    "log"
-    "net/http"
-    "os"
-    "strings"
-    "time"
+	"database/sql"
+	"encoding/json"
+	"errors"
+	"net/http"
+	"os"
+	"regexp"
+	"strings"
+	"time"
 
-    mysql "github.com/go-sql-driver/mysql"
-    "github.com/golang-jwt/jwt/v5"
-    "golang.org/x/crypto/bcrypt"
+	mysql "github.com/go-sql-driver/mysql"
+	"github.com/golang-jwt/jwt/v5"
+	"golang.org/x/crypto/bcrypt"
 
-    "Billfast/db"
-    "Billfast/models"
+	"Billfast/db"
+	"Billfast/models"
 )
 
-// Register crea un nuevo usuario en la DB.
-func Register(w http.ResponseWriter, r *http.Request) {
-    var user models.User
-    if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
-        http.Error(w, "JSON inválido", http.StatusBadRequest)
-        return
-    }
+const (
+	minPasswordLength = 4
+	maxPasswordLength = 128
+	maxEmailLength    = 255
+	maxUsernameLength = 100
+	bcryptCost        = 12
+	jwtExpiration     = 72 * time.Hour
+)
 
-    // Cifra la contraseña
-    hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
-    if err != nil {
-        http.Error(w, "Error al encriptar contraseña", http.StatusInternalServerError)
-        return
-    }
-    user.Password = string(hashedPassword)
+var emailRegex = regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
 
-    // Intento de inserción
-    _, err = db.DB.Exec(
-        "INSERT INTO users (email, password, username) VALUES (?, ?, ?)",
-        user.Email, user.Password, user.Username,
-    )
-    if err != nil {
-        // Desempaquetar error MySQL
-        var mysqlErr *mysql.MySQLError
-        if errors.As(err, &mysqlErr) && mysqlErr.Number == 1062 {
-            field := "Email"
-            // MySQLError.Message contiene el índice duplicado
-            if strings.Contains(mysqlErr.Message, "username") {
-                field = "Nombre de usuario"
-            }
-            w.WriteHeader(http.StatusConflict)
-            json.NewEncoder(w).Encode(map[string]string{
-                "error": fmt.Sprintf("%s ya registrado", field),
-            })
-            return
-        }
-        // Log para depuración si no es un 1062
-        log.Printf("[REGISTER] Error al insertar usuario: %T %v\n", err, err)
-        http.Error(w, "Error al registrar usuario", http.StatusInternalServerError)
-        return
-    }
-
-    w.WriteHeader(http.StatusCreated)
+type ErrorResponse struct {
+	Error string `json:"error"`
 }
 
-// Login autentica al usuario y devuelve un JWT.
+func respondJSON(w http.ResponseWriter, status int, data interface{}) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	json.NewEncoder(w).Encode(data)
+}
+
+func respondError(w http.ResponseWriter, status int, message string) {
+	respondJSON(w, status, ErrorResponse{Error: message})
+}
+
+func validateEmail(email string) error {
+	if len(email) == 0 {
+		return errors.New("email is required")
+	}
+	if len(email) > maxEmailLength {
+		return errors.New("email is too long")
+	}
+	if !emailRegex.MatchString(email) {
+		return errors.New("invalid email format")
+	}
+	return nil
+}
+
+func validatePassword(password string) error {
+	if len(password) < minPasswordLength {
+		return errors.New("password is too short")
+	}
+	if len(password) > maxPasswordLength {
+		return errors.New("password is too long")
+	}
+	return nil
+}
+
+func validateUsername(username string) error {
+	if len(username) == 0 {
+		return errors.New("username is required")
+	}
+	if len(username) > maxUsernameLength {
+		return errors.New("username is too long")
+	}
+	return nil
+}
+
+func Register(w http.ResponseWriter, r *http.Request) {
+	var user models.User
+	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
+		respondError(w, http.StatusBadRequest, "Invalid JSON")
+		return
+	}
+
+	if err := validateEmail(user.Email); err != nil {
+		respondError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	if err := validatePassword(user.Password); err != nil {
+		respondError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	if err := validateUsername(user.Username); err != nil {
+		respondError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcryptCost)
+	if err != nil {
+		respondError(w, http.StatusInternalServerError, "Internal server error")
+		return
+	}
+	user.Password = string(hashedPassword)
+
+	_, err = db.DB.Exec(
+		"INSERT INTO users (email, password, username) VALUES (?, ?, ?)",
+		user.Email, user.Password, user.Username,
+	)
+	if err != nil {
+		var mysqlErr *mysql.MySQLError
+		if errors.As(err, &mysqlErr) && mysqlErr.Number == 1062 {
+			field := "Email"
+			if strings.Contains(mysqlErr.Message, "username") {
+				field = "Username"
+			}
+			respondError(w, http.StatusConflict, field+" already exists")
+			return
+		}
+		respondError(w, http.StatusInternalServerError, "Failed to create user")
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+}
+
 func Login(w http.ResponseWriter, r *http.Request) {
-    // Delay intencional de 3 segundos
-    time.Sleep(3 * time.Second)
+	var input models.User
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		respondError(w, http.StatusBadRequest, "Invalid request")
+		return
+	}
 
-    var input models.User
-    if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-        http.Error(w, "Solicitud inválida", http.StatusBadRequest)
-        return
-    }
+	if err := validateEmail(input.Email); err != nil {
+		respondError(w, http.StatusBadRequest, err.Error())
+		return
+	}
 
-    // Consulta de usuario
-    var user models.User
-    err := db.DB.QueryRow(
-        "SELECT id, password FROM users WHERE email = ?",
-        input.Email,
-    ).Scan(&user.ID, &user.Password)
+	var user models.User
+	err := db.DB.QueryRow(
+		"SELECT id, password FROM users WHERE email = ?",
+		input.Email,
+	).Scan(&user.ID, &user.Password)
 
-    if err != nil {
-        if err == sql.ErrNoRows {
-            http.Error(w, "Credenciales inválidas", http.StatusUnauthorized)
-        } else {
-            http.Error(w, "Error interno", http.StatusInternalServerError)
-        }
-        return
-    }
+	if err != nil {
+		if err == sql.ErrNoRows {
+			time.Sleep(time.Duration(100+time.Now().UnixNano()%200) * time.Millisecond)
+			respondError(w, http.StatusUnauthorized, "Invalid credentials")
+		} else {
+			respondError(w, http.StatusInternalServerError, "Internal server error")
+		}
+		return
+	}
 
-    // Verificar contraseña
-    if bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(input.Password)) != nil {
-        http.Error(w, "Credenciales inválidas", http.StatusUnauthorized)
-        return
-    }
+	if bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(input.Password)) != nil {
+		time.Sleep(time.Duration(100+time.Now().UnixNano()%200) * time.Millisecond)
+		respondError(w, http.StatusUnauthorized, "Invalid credentials")
+		return
+	}
 
-    // Obtener secreto JWT
-    secret := os.Getenv("JWT_SECRET")
-    if secret == "" {
-        log.Println("[LOGIN] JWT_SECRET no está definido en el entorno")
-        http.Error(w, "Error interno", http.StatusInternalServerError)
-        return
-    }
+	secret := os.Getenv("JWT_SECRET")
+	if secret == "" {
+		respondError(w, http.StatusInternalServerError, "Internal server error")
+		return
+	}
 
-    // Crear claims y token
-    claims := jwt.MapClaims{
-        "user_id": user.ID,
-        "exp":     time.Now().Add(72 * time.Hour).Unix(),
-    }
-    tokenObj := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-    tokenString, err := tokenObj.SignedString([]byte(secret))
-    if err != nil {
-        http.Error(w, "Error al generar token", http.StatusInternalServerError)
-        return
-    }
+	claims := jwt.MapClaims{
+		"user_id": user.ID,
+		"exp":     time.Now().Add(jwtExpiration).Unix(),
+		"iat":     time.Now().Unix(),
+	}
+	tokenObj := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenString, err := tokenObj.SignedString([]byte(secret))
+	if err != nil {
+		respondError(w, http.StatusInternalServerError, "Failed to generate token")
+		return
+	}
 
-    // Devolver token
-    w.Header().Set("Content-Type", "application/json")
-    json.NewEncoder(w).Encode(map[string]string{"token": tokenString})
+	respondJSON(w, http.StatusOK, map[string]interface{}{
+		"token":   tokenString,
+		"user_id": user.ID,
+	})
 }
