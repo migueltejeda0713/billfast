@@ -9,6 +9,7 @@ import (
 	"regexp"
 	"strings"
 	"time"
+	"fmt"
 
 	mysql "github.com/go-sql-driver/mysql"
 	"github.com/golang-jwt/jwt/v5"
@@ -101,6 +102,7 @@ func Register(w http.ResponseWriter, r *http.Request) {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcryptCost)
 	if err != nil {
 		respondError(w, http.StatusInternalServerError, "Internal server error")
+		fmt.Print("error", err)
 		return
 	}
 	user.Password = string(hashedPassword)
@@ -150,6 +152,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 			respondError(w, http.StatusUnauthorized, "Invalid credentials")
 		} else {
 			respondError(w, http.StatusInternalServerError, "Internal server error")
+			fmt.Print("error", err)
 		}
 		return
 	}
@@ -163,6 +166,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	secret := os.Getenv("JWT_SECRET")
 	if secret == "" {
 		respondError(w, http.StatusInternalServerError, "Internal server error")
+		fmt.Print("error", err)
 		return
 	}
 

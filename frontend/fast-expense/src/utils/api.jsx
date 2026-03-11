@@ -1,4 +1,4 @@
-export const API_URL = process.env.REACT_APP_API_URL || 'http://10.0.0.27:5183';
+export const API_URL = process.env.REACT_APP_API_URL || 'http://billfast-backend-4kvrav-19c5fd-51-210-245-223.traefik.me';
 
 // Budget API functions
 export const budgetAPI = {

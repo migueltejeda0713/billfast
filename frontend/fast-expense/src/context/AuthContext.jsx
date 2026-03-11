@@ -11,7 +11,7 @@ export function AuthProvider({ children }) {
     if (storedToken !== token) {
       setToken(storedToken);
     }
-  }, []);
+  }, [token]); // Add token to dependency array
 
   const login = (newToken) => {
     localStorage.setItem('token', newToken);

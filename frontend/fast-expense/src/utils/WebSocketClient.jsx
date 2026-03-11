@@ -7,7 +7,6 @@ export default class WebSocketClient extends WebSocket {
     this.url = url;
     this.addEventListener('close', () => {
       setTimeout(() => {
-        console.log('Reintentando WebSocket...');
         const ws = new WebSocketClient(this.url);
         Object.assign(this, ws);
       }, this.reconnectInterval);

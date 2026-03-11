@@ -21,7 +21,9 @@ function MonthSelector({ onSelect }) {
         const data = await res.json();
         setMonths(data);
       } catch (err) {
-        if (err.name !== 'AbortError') console.error(err);
+        if (err.name !== 'AbortError') {
+          // Error silenciado
+        }
       } finally {
         setLoading(false);
       }

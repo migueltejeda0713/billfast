@@ -10,7 +10,6 @@ export function initSocket(onMessage, onOpen, onClose) {
   socket = new WebSocketClient(wsUrl);
 
   socket.onopen = () => {
-    console.log('WebSocket conectado');
     if (onOpen) onOpen();
   };
 
@@ -19,12 +18,11 @@ export function initSocket(onMessage, onOpen, onClose) {
   };
 
   socket.onclose = () => {
-    console.log('WebSocket desconectado');
     if (onClose) onClose();
   };
 
   socket.onerror = err => {
-    console.error('WebSocket error:', err);
+    // Error silenciado
   };
 
   return socket;

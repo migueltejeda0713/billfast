@@ -1,6 +1,6 @@
 // src/Pages/Budgets.jsx
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { budgetAPI } from '../utils/api';
 import { useNavigate } from 'react-router-dom';
@@ -23,11 +23,7 @@ export default function Budgets() {
     const [editName, setEditName] = useState('');
     const [editAmount, setEditAmount] = useState('');
 
-    useEffect(() => {
-        loadBudgets();
-    }, [token]);
-
-    const loadBudgets = async () => {
+    const loadBudgets = useCallback(async () => {
         if (!token) return;
         setLoading(true);
         setError('');
@@ -39,7 +35,11 @@ export default function Budgets() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [token]);
+
+    useEffect(() => {
+        loadBudgets();
+    }, [loadBudgets]);
 
     const handleCreateBudget = async (e) => {
         e.preventDefault();

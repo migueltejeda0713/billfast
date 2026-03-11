@@ -8,7 +8,8 @@ import CustomLoader from '../components/CustomLoader';
 import { API_URL } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 
-const ExpenseList = React.lazy(() => import('../components/ExpenseList'));
+// Remove this line - ExpenseList is not being used
+// const ExpenseList = React.lazy(() => import('../components/ExpenseList'));
 
 export default function PastMonth() {
   const { token } = useAuth();
